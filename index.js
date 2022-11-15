@@ -174,15 +174,28 @@ const withdrawEth = async () => {
   console.log("Withdraw ETH");
   const start = new Date();
   await reportEthBalances();
-  const response = await crossChainMessenger.withdrawETH(ethers.utils.parseEther("0.002"));
+  const response = await crossChainMessenger.withdrawETH(ethers.utils.parseEther("0.01"));
   console.log(`Withdraw transaction hash (on L1): ${response.hash}`);
-  console.log(`\tMore info: https://goerli.etherscan.io/tx/${response.hash}`)
+  console.log(`\tMore info: https://goerli.etherscan.io/tx/${response.hash}`);
   await response.wait();
-  console.log("Waiting for relay");
-  console.log(`Time so far ${(new Date() - start) / 1000} seconds`)
-  await crossChainMessenger.waitForMessageStatus(response.hash, optimismSDK.MessageStatus.RELAYED);
+  console.log("Waiting for status to change to IN_CHALLENGE_PERIOD");
+  console.log(`Time so far ${(new Date() - start) / 1000} seconds`);
+  console.log(`Time so far ${(new Date() - start) / 1000} seconds`);
+  await crossChainMessenger.waitForMessageStatus(response.hash,
+    optimismSDK.MessageStatus.IN_CHALLENGE_PERIOD);
+  console.log("In the challenge period, waiting for status READY_FOR_RELAY");
+  console.log(`Time so far ${(new Date() - start) / 1000} seconds`);
+  await crossChainMessenger.waitForMessageStatus(response.hash,
+    optimismSDK.MessageStatus.READY_FOR_RELAY);
+  console.log("Ready for relay, finalizing message now");
+  console.log(`Time so far ${(new Date() - start) / 1000} seconds`);
+  await crossChainMessenger.finalizeMessage(response);
+  console.log("Waiting for status to change to RELAYED");
+  console.log(`Time so far ${(new Date() - start) / 1000} seconds`);
+  await crossChainMessenger.waitForMessageStatus(response,
+    optimismSDK.MessageStatus.RELAYED);
   await reportEthBalances();
-  console.log(`withdrawEth took ${(new Date() - start) / 1000} seconds\n\n`)
+  console.log(`withdrawEth took ${(new Date() - start) / 1000} seconds\n\n`);
 }
 
 
@@ -226,7 +239,8 @@ const main = async () => {
   // await depositERC20()
   // await withdrawERC20()
   // await depositEth();
-  await withdrawEth();
+  // await withdrawEth();
+  await reportEthBalances();
 }  // main
 
 
